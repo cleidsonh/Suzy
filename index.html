@@ -129,6 +129,8 @@
     const bgm = document.getElementById("bgm");
     const scoreDisplay = document.getElementById("scoreDisplay");
 
+    bgm.play();
+
     let heart = { x: 50, y: 150, width: 30, height: 30, velocity: 0 };
     const gravity = 0.06;
     const flap = -2.5;
@@ -228,7 +230,6 @@
           scoreDisplay.textContent = `Pontuação: ${score}`;
           if (score >= 2000) {
             endGame(true);
-            bgm.play();
           }
         }
       });
@@ -252,7 +253,6 @@
           clearInterval(interval);
           countdownEl.style.display = "none";
           started = true;
-          bgm.play();
           loop();
         } else {
           countdownEl.textContent = count;
