@@ -95,6 +95,7 @@
 </head>
 <body>
   <canvas id="gameCanvas" width="350" height="650"></canvas>
+  <button id="startBtn" onclick="startGame()">Começar Jogo 💘</button>
   <div id="scoreDisplay">Pontuação: 0</div>
   <div id="countdown"></div>
   <div id="message">
@@ -128,8 +129,6 @@
     const ctx = canvas.getContext("2d");
     const bgm = document.getElementById("bgm");
     const scoreDisplay = document.getElementById("scoreDisplay");
-
-    bgm.play();
 
     let heart = { x: 50, y: 150, width: 30, height: 30, velocity: 0 };
     const gravity = 0.06;
@@ -253,7 +252,6 @@
           clearInterval(interval);
           countdownEl.style.display = "none";
           started = true;
-          bgm.play();
           loop();
         } else {
           countdownEl.textContent = count;
@@ -261,8 +259,14 @@
       }, 1000);
     }
 
-    resetGame();
-    startCountdown();
+    function startGame() {
+      document.getElementById("startBtn").style.display = "none";
+      resetGame();
+      bgm.play(); // Inicia o áudio após interação do usuário
+      startCountdown();
+    }
+
+    // Não chamar bgm.play() automaticamente aqui! Os navegadores bloqueiam isso sem interação
   </script>
 </body>
 </html>
