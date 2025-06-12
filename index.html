@@ -228,6 +228,7 @@
           scoreDisplay.textContent = `Pontuação: ${score}`;
           if (score >= 2000) {
             endGame(true);
+            bgm.play();
           }
         }
       });
