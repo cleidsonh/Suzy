@@ -253,6 +253,7 @@
           clearInterval(interval);
           countdownEl.style.display = "none";
           started = true;
+          bgm.play();
           loop();
         } else {
           countdownEl.textContent = count;
