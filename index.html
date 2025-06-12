@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Love 💘</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(to top, #ffdde1, #ee9ca7);
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      background: #fff0f5;
+      border: 3px solid #ff6f91;
+      border-radius: 16px;
+    }
+    #message, #countdown, #finalMessage {
+      display: none;
+      background: rgba(255,255,255,0.95);
+      padding: 20px;
+      border-radius: 16px;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 1.4em;
+      color: #d6336c;
+      box-shadow: 0 0 20px rgba(255,105,135,0.5);
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    #scoreDisplay {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 1.4em;
+      color: #d6336c;
+      font-weight: bold;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      background-color: #ff6f91;
+      color: white;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #ff4e73;
+    }
+    #finalImage {
+      width: 300px;
+      border-radius: 20px;
+      margin-top: 15px;
+      animation: pulse 2s ease-in-out infinite;
+      box-shadow: 0 0 25px rgba(255, 111, 145, 0.6);
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    #finalTextScreen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      color: #d6336c;
+      font-size: 1.5em;
+      padding: 40px;
+      overflow: hidden;
+      display: none;
+      z-index: 1000;
+    }
+    #scrollingText {
+      animation: scrollUp 40s linear forwards;
+      white-space: pre-wrap;
+    }
+    @keyframes scrollUp {
+      0% { transform: translateY(100%); }
+      100% { transform: translateY(-100%); }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas" width="500" height="700"></canvas>
+  <div id="scoreDisplay">Pontuação: 0</div>
+  <div id="countdown"></div>
+  <div id="message">
+    <p>Você enfrentou tudo pra chegar até meu coração! ❤️</p>
+    <button onclick="restartGame()">Jogar de novo</button>
+    <br><br>
+    <a id="whatsappLink" href="#" target="_blank">Compartilhar no WhatsApp 💌</a>
+  </div>
+  <div id="finalMessage">
+    <p><strong>Parabéns!</strong> Você chegou até o fim e conquistou meu coração! 💖</p>
+    <img id="finalImage" src="imagem.jpg" alt="Foto do casal">
+  </div>
+  <div id="finalTextScreen">
+    <div id="scrollingText">
+      Suzana,
+
+      Neste Dia dos Namorados, quero celebrar não só a esposa incrível que você é, mas também a mãe extraordinária dos nossos filhos. Seu amor e sua força são o que sustentam nosso lar e o que me inspira todos os dias.
+
+      Obrigado por ser minha parceira, por cuidar de nós com tanto carinho, e por nunca desistir mesmo quando tudo parece difícil. Você é a pessoa mais forte que conheço, e tenho o privilégio de dividir minha vida com você.
+
+      Te amo com todo meu coração. 💖
+    </div>
+  </div>
+
+  <audio id="bgm" loop>
+    <source src="https://cdn.pixabay.com/download/audio/2023/03/22/audio_ae80d6657b.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const bgm = document.getElementById("bgm");
+    const scoreDisplay = document.getElementById("scoreDisplay");
+
+    let heart = { x: 50, y: 150, width: 30, height: 30, velocity: 0 };
+    const gravity = 0.06;
+    const flap = -2.5;
+
+    let pipes = [];
+    let gameOver = false;
+    let score = 0;
+    let started = false;
+
+    function drawHeart(x, y) {
+      ctx.fillStyle = "#ff6f91";
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.bezierCurveTo(x - 15, y - 15, x - 15, y + 10, x, y + 20);
+      ctx.bezierCurveTo(x + 15, y + 10, x + 15, y - 15, x, y);
+      ctx.fill();
+    }
+
+    function drawPipe(pipe) {
+      ctx.fillStyle = "#d6336c";
+      ctx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+      ctx.fillRect(pipe.x, pipe.bottom, pipe.width, canvas.height);
+    }
+
+    function createPipe() {
+      const gap = 260;
+      const top = Math.random() * 100 + 120;
+      pipes.push({
+        x: canvas.width,
+        width: 40,
+        top: top,
+        bottom: top + gap,
+        passed: false
+      });
+    }
+
+    function resetGame() {
+      heart.y = 150;
+      heart.velocity = 0;
+      pipes = [];
+      score = 0;
+      gameOver = false;
+      started = false;
+      document.getElementById("message").style.display = "none";
+      document.getElementById("finalMessage").style.display = "none";
+      document.getElementById("finalTextScreen").style.display = "none";
+      scoreDisplay.textContent = "Pontuação: 0";
+    }
+
+    function restartGame() {
+      resetGame();
+      startCountdown();
+    }
+
+    function endGame(final = false) {
+      gameOver = true;
+      if (final) {
+        document.getElementById("finalMessage").style.display = "block";
+        setTimeout(() => {
+          document.getElementById("finalTextScreen").style.display = "block";
+        }, 3000);
+      } else {
+        document.getElementById("message").style.display = "block";
+        const msg = encodeURIComponent("Você enfrentou tudo pra chegar até meu coração! Te amo! 💘");
+        document.getElementById("whatsappLink").href = `https://wa.me/?text=${msg}`;
+      }
+    }
+
+    document.addEventListener("keydown", () => { if (started) heart.velocity = flap; });
+    canvas.addEventListener("click", () => { if (started) heart.velocity = flap; });
+
+    function loop() {
+      if (gameOver || !started) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      heart.velocity += gravity;
+      heart.y += heart.velocity;
+      drawHeart(heart.x, heart.y);
+
+      if (Math.random() < 0.015) createPipe();
+
+      pipes.forEach(pipe => {
+        pipe.x -= 1.2;
+        drawPipe(pipe);
+
+        if (
+          heart.x < pipe.x + pipe.width &&
+          heart.x + heart.width > pipe.x &&
+          (heart.y < pipe.top || heart.y + heart.height > pipe.bottom)
+        ) {
+          endGame();
+        }
+
+        if (!pipe.passed && pipe.x + pipe.width < heart.x) {
+          pipe.passed = true;
+          score += 50;
+          scoreDisplay.textContent = `Pontuação: ${score}`;
+          if (score >= 1000) {
+            endGame(true);
+          }
+        }
+      });
+
+      pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+
+      if (heart.y > canvas.height || heart.y < 0) endGame();
+
+      requestAnimationFrame(loop);
+    }
+
+    function startCountdown() {
+      const countdownEl = document.getElementById("countdown");
+      countdownEl.style.display = "block";
+      let count = 3;
+      countdownEl.textContent = count;
+
+      const interval = setInterval(() => {
+        count--;
+        if (count === 0) {
+          clearInterval(interval);
+          countdownEl.style.display = "none";
+          started = true;
+          bgm.play();
+          loop();
+        } else {
+          countdownEl.textContent = count;
+        }
+      }, 1000);
+    }
+
+    resetGame();
+    startCountdown();
+  </script>
+</body>
+</html>
